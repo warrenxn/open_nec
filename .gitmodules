@@ -1,0 +1,3 @@
+[submodule "timer_server"]
+	path = timer_server
+	url = https://github.com/warrenxn/timer_server.git
