@@ -1,0 +1,25 @@
+--cpu Cortex-M3
+"nec_sample\startup_stm32f103xb.o"
+"nec_sample\main.o"
+"nec_sample\stm32f1xx_it.o"
+"nec_sample\stm32f1xx_hal_msp.o"
+"nec_sample\stm32f1xx_hal_gpio_ex.o"
+"nec_sample\stm32f1xx_hal_tim.o"
+"nec_sample\stm32f1xx_hal_tim_ex.o"
+"nec_sample\stm32f1xx_hal.o"
+"nec_sample\stm32f1xx_hal_rcc.o"
+"nec_sample\stm32f1xx_hal_rcc_ex.o"
+"nec_sample\stm32f1xx_hal_gpio.o"
+"nec_sample\stm32f1xx_hal_dma.o"
+"nec_sample\stm32f1xx_hal_cortex.o"
+"nec_sample\stm32f1xx_hal_pwr.o"
+"nec_sample\stm32f1xx_hal_flash.o"
+"nec_sample\stm32f1xx_hal_flash_ex.o"
+"nec_sample\stm32f1xx_hal_exti.o"
+"nec_sample\system_stm32f1xx.o"
+"nec_sample\nec.o"
+"nec_sample\timer_server.o"
+--strict --scatter "nec_sample\nec_sample.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "nec_sample.map" -o nec_sample\nec_sample.axf
