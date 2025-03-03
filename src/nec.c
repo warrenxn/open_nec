@@ -3,7 +3,7 @@
  * @Autor: warren xu
  * @Date: 2024-12-25 15:10:47
  * @LastEditors: warren xu
- * @LastEditTime: 2025-01-02 13:46:14
+ * @LastEditTime: 2025-03-02 15:13:46
  */
 #include "nec.h"
 #include <string.h>
@@ -182,8 +182,6 @@ void nec_interrupt(uint32_t count, uint8_t is_high, struct nec_instance *instanc
             case NEC_STATE_WAIT_DATA_H:
                 if ((is_data_legal(instance->config.data_count_h, count))&&(is_high)){
                     instance->state = NEC_STATE_WAIT_DATA_L;
-                    deinit_timer(&instance->timer);
-                    create_timer(&instance->timer, NEC_WAIT_IDLE_TIME);
                 }else{
                     instance->recv_flag |= NEC_RECV_RAW_FLAG_ERROR_START;
                     instance->state = NEC_STATE_WAIT_START_H;
@@ -192,17 +190,21 @@ void nec_interrupt(uint32_t count, uint8_t is_high, struct nec_instance *instanc
             case NEC_STATE_WAIT_DATA_L:
                 do{
                     uint8_t data_index = instance->recv_nec.pos/8;
-                    if ((is_data_legal(instance->config.zero_count_l, count))&&(!is_high)){
-                        instance->recv_nec.buf[data_index] &= ~(1<<(instance->recv_nec.pos%8));
-                        instance->recv_nec.pos++;
-                        instance->state = NEC_STATE_WAIT_DATA_H;
-                    }else if ((is_data_legal(instance->config.one_count_l, count))&&(!is_high)){
-                        instance->recv_nec.buf[data_index] |= 1<<(instance->recv_nec.pos%8);
-                        instance->recv_nec.pos++;
-                        instance->state = NEC_STATE_WAIT_DATA_H;
+                    if (data_index > NEC_DATA_MAX){
+                        instance->recv_flag |= NEC_RECV_RAW_FLAG_ERROR_END;
                     }else{
-                        instance->recv_flag |= NEC_RECV_RAW_FLAG_ERROR_START;
-                        instance->state = NEC_STATE_WAIT_START_H;
+                        if ((is_data_legal(instance->config.zero_count_l, count))&&(!is_high)){
+                            instance->recv_nec.buf[data_index] &= ~(1<<(instance->recv_nec.pos%8));
+                            instance->recv_nec.pos++;
+                            instance->state = NEC_STATE_WAIT_DATA_H;
+                        }else if ((is_data_legal(instance->config.one_count_l, count))&&(!is_high)){
+                            instance->recv_nec.buf[data_index] |= 1<<(instance->recv_nec.pos%8);
+                            instance->recv_nec.pos++;
+                            instance->state = NEC_STATE_WAIT_DATA_H;
+                        }else{
+                            instance->recv_flag |= NEC_RECV_RAW_FLAG_ERROR_START;
+                            instance->state = NEC_STATE_WAIT_START_H;
+                        }
                     }
                 } while (0);
                 break;
@@ -213,14 +215,15 @@ void nec_interrupt(uint32_t count, uint8_t is_high, struct nec_instance *instanc
         if(instance->recv_flag&NEC_RECV_RAW_FLAG_ERROR_MASK){
             instance->recv_nec.pos = 0;
         }
-        instance->recv_raw.buf[instance->recv_raw.pos] = count;
-        instance->recv_raw.pos++;
         if (instance->recv_raw.pos >= NEC_RECV_RAW_MAX){
             if(instance->recv_flag & NEC_RECV_RAW_FLAG_ERROR_START){
                 instance->recv_flag |= NEC_RECV_RAW_FLAG_ERROR_END;
             }else{
                 instance->recv_raw.pos = 0;
             }
+        }else{
+            instance->recv_raw.buf[instance->recv_raw.pos] = count;
+            instance->recv_raw.pos++;
         }
         deinit_timer(&instance->timer);
         create_timer(&instance->timer, NEC_WAIT_IDLE_TIME);
